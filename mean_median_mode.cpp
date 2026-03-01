@@ -133,6 +133,8 @@ int getMode(int* vals, int* freqs, int n) {
 // =====================================================
 int main() {
     int n;
+    cout<<"Welcome To PICT schools \nYou are experiencing a Calculator Programm which is Guided by a Math faculty and made by Technics given by CE faculty"<<endl;
+    cout<<"Presenting the basic descriptive statistics calculator "<<endl;
     cout << "Enter number of distinct data points: ";
     cin >> n;
     
