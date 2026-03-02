@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 using namespace std;
 
@@ -11,151 +12,207 @@ void mySwap(int& a, int& b) {
     b = t;
 }
 
-// =====================================================
-// Divide & Conquer Data Reading Phase
-// =====================================================
-void readSingleData(int* vals, int* freqs, int index) {
-    cout << "Enter Value and Frequency for item " << index + 1 << ": ";
-    cin >> vals[index] >> freqs[index];
-}
-
-void readData(int* vals, int* freqs, int left, int right) {
-    (left > right) ? void() :
-    (left == right) ? readSingleData(vals, freqs, left) :
-    (readData(vals, freqs, left, (left + right) / 2), readData(vals, freqs, (left + right) / 2 + 1, right));
-}
-
-// =====================================================
-// Divide & Conquer Sorting (Quick Sort) Phase
-// We need sorting primarily for calculating the Median
-// =====================================================
-void quickSort(int* vals, int* freqs, int left, int right);
-
-int getPartitionIndex(int *vals, int *freqs, int pivot, int right, int j, int i) {
-    return (i >= right) ? j :
-           (vals[i] < pivot) ? (mySwap(vals[i], vals[j]), mySwap(freqs[i], freqs[j]), getPartitionIndex(vals, freqs, pivot, right, j + 1, i + 1)) :
-           getPartitionIndex(vals, freqs, pivot, right, j, i + 1);
-}
-
-int partitionElements(int *vals, int *freqs, int left, int right) {
-    return getPartitionIndex(vals, freqs, vals[right], right, left, left);
-}
-
-void applyQuickSort(int* vals, int* freqs, int left, int right, int pivotIdx) {
-    (mySwap(vals[pivotIdx], vals[right]), mySwap(freqs[pivotIdx], freqs[right]), 0);
-    quickSort(vals, freqs, left, pivotIdx - 1);
-    quickSort(vals, freqs, pivotIdx + 1, right);
-}
-
-void quickSort(int* vals, int* freqs, int left, int right) {
-    (left < right) ? applyQuickSort(vals, freqs, left, right, partitionElements(vals, freqs, left, right)) : void();
-}
-
-// =====================================================
-// Divide & Conquer Sums (Used for Mean) Phase
-// =====================================================
-double sumXF(int* vals, int* freqs, int left, int right) {
-    return (left == right) ? (double)vals[left] * freqs[left] :
-           sumXF(vals, freqs, left, (left + right) / 2) + sumXF(vals, freqs, (left + right) / 2 + 1, right);
-}
-
-int sumFreq(int* freqs, int left, int right) {
-    return (left == right) ? freqs[left] :
-           sumFreq(freqs, left, (left + right) / 2) + sumFreq(freqs, (left + right) / 2 + 1, right);
-}
-
-// -----------------------------------------------------
-// Mean Calculation
-// -----------------------------------------------------
-double getMean(int* vals, int* freqs, int n) {
-    return sumXF(vals, freqs, 0, n - 1) / sumFreq(freqs, 0, n - 1);
-}
-
-// =====================================================
-// Divide & Conquer Median Search Phase
-// =====================================================
-int getMedianElementDandC(int* vals, int* freqs, int left, int right, int target);
-
-int evaluateMedianDandC(int* vals, int* freqs, int left, int right, int target, int leftSum) {
-    return (leftSum >= target) ? 
-           getMedianElementDandC(vals, freqs, left, (left + right) / 2, target) :
-           getMedianElementDandC(vals, freqs, (left + right) / 2 + 1, right, target - leftSum);
-}
-
-// Searches for target frequency recursively in split arrays!
-int getMedianElementDandC(int* vals, int* freqs, int left, int right, int target) {
-    return (left == right) ? vals[left] :
-           evaluateMedianDandC(vals, freqs, left, right, target, sumFreq(freqs, left, (left + right) / 2));
-}
-
-double calculateMedianGivenTotal(int* vals, int* freqs, int n, int totalFreq) {
-    return (totalFreq % 2 != 0) ? 
-           (double)getMedianElementDandC(vals, freqs, 0, n - 1, totalFreq / 2 + 1) :
-           ((double)getMedianElementDandC(vals, freqs, 0, n - 1, totalFreq / 2) + 
-            getMedianElementDandC(vals, freqs, 0, n - 1, totalFreq / 2 + 1)) / 2.0;
-}
-
-// -----------------------------------------------------
-// Median Calculation
-// -----------------------------------------------------
-double getMedian(int* vals, int* freqs, int n) {
-    return calculateMedianGivenTotal(vals, freqs, n, sumFreq(freqs, 0, n - 1));
-}
-
-// =====================================================
-// Divide & Conquer Mode Search Phase
-// =====================================================
 struct ModeInfo {
     int max_freq;
     int mode_val;
 };
 
-ModeInfo combineMode(ModeInfo a, ModeInfo b) {
-    // DRY comparison logic
-    return (a.max_freq >= b.max_freq) ? a : b;
-}
+// =====================================================
+// PURE OBJECT-ORIENTED STRUCTURE
+// =====================================================
+class DescriptiveStatistics {
+private:
+    int* vals;
+    int* freqs;
+    int n;
 
-ModeInfo getModeInfo(int* vals, int* freqs, int left, int right) {
-    return (left == right) ? ModeInfo{freqs[left], vals[left]} :
-           combineMode(getModeInfo(vals, freqs, left, (left + right) / 2),
-                       getModeInfo(vals, freqs, (left + right) / 2 + 1, right));
-}
+    // =====================================================
+    // Divide & Conquer Data Reading Phase
+    // =====================================================
+    void readSingleData(int index) {
+        cout << "Enter Value and Frequency for item " << index + 1 << ": ";
+        cin >> vals[index] >> freqs[index];
+    }
 
-// -----------------------------------------------------
-// Mode Calculation
-// -----------------------------------------------------
-int getMode(int* vals, int* freqs, int n) {
-    return getModeInfo(vals, freqs, 0, n - 1).mode_val;
-}
+    void readDataRecursive(int left, int right) {
+        (left > right) ? void() :
+        (left == right) ? readSingleData(left) :
+        (readDataRecursive(left, (left + right) / 2), readDataRecursive((left + right) / 2 + 1, right));
+    }
+
+    // =====================================================
+    // Divide & Conquer Sorting (Quick Sort) Phase
+    // =====================================================
+    int getPartitionIndex(int pivot, int right, int j, int i) {
+        return (i >= right) ? j :
+               (vals[i] < pivot) ? (mySwap(vals[i], vals[j]), mySwap(freqs[i], freqs[j]), getPartitionIndex(pivot, right, j + 1, i + 1)) :
+               getPartitionIndex(pivot, right, j, i + 1);
+    }
+
+    int partitionElements(int left, int right) {
+        return getPartitionIndex(vals[right], right, left, left);
+    }
+
+    void applyQuickSort(int left, int right, int pivotIdx) {
+        (mySwap(vals[pivotIdx], vals[right]), mySwap(freqs[pivotIdx], freqs[right]), 0);
+        quickSortRecursive(left, pivotIdx - 1);
+        quickSortRecursive(pivotIdx + 1, right);
+    }
+
+    void quickSortRecursive(int left, int right) {
+        (left < right) ? applyQuickSort(left, right, partitionElements(left, right)) : void();
+    }
+
+    // =====================================================
+    // Divide & Conquer Sums Phase
+    // =====================================================
+    double sumXF(int left, int right) const {
+        return (left == right) ? (double)vals[left] * freqs[left] :
+               sumXF(left, (left + right) / 2) + sumXF((left + right) / 2 + 1, right);
+    }
+
+    int sumFreq(int left, int right) const {
+        return (left == right) ? freqs[left] :
+               sumFreq(left, (left + right) / 2) + sumFreq((left + right) / 2 + 1, right);
+    }
+
+    // =====================================================
+    // Divide & Conquer Median Search Phase
+    // =====================================================
+    int evaluateMedianDandC(int left, int right, int target, int leftSum) const {
+        return (leftSum >= target) ? 
+               getMedianElementDandC(left, (left + right) / 2, target) :
+               getMedianElementDandC((left + right) / 2 + 1, right, target - leftSum);
+    }
+
+    int getMedianElementDandC(int left, int right, int target) const {
+        return (left == right) ? vals[left] :
+               evaluateMedianDandC(left, right, target, sumFreq(left, (left + right) / 2));
+    }
+
+    double calculateMedianGivenTotal(int totalFreq) const {
+        return (totalFreq % 2 != 0) ? 
+               (double)getMedianElementDandC(0, n - 1, totalFreq / 2 + 1) :
+               ((double)getMedianElementDandC(0, n - 1, totalFreq / 2) + 
+                getMedianElementDandC(0, n - 1, totalFreq / 2 + 1)) / 2.0;
+    }
+
+    // =====================================================
+    // Divide & Conquer Mode Search Phase
+    // =====================================================
+    ModeInfo combineMode(ModeInfo a, ModeInfo b) const {
+        return (a.max_freq >= b.max_freq) ? a : b;
+    }
+
+    ModeInfo getModeInfo(int left, int right) const {
+        return (left == right) ? ModeInfo{freqs[left], vals[left]} :
+               combineMode(getModeInfo(left, (left + right) / 2),
+                           getModeInfo((left + right) / 2 + 1, right));
+    }
+
+    // =====================================================
+    // Divide & Conquer Measures of Dispersion Phase
+    // =====================================================
+    double sumSquaredDiff(double mean, int left, int right) const {
+        return (left == right) ? (double)freqs[left] * (vals[left] - mean) * (vals[left] - mean) :
+               sumSquaredDiff(mean, left, (left + right) / 2) + sumSquaredDiff(mean, (left + right) / 2 + 1, right);
+    }
+
+    double sumAbsDiff(double mean, int left, int right) const {
+        return (left == right) ? (double)freqs[left] * std::abs(vals[left] - mean) :
+               sumAbsDiff(mean, left, (left + right) / 2) + sumAbsDiff(mean, (left + right) / 2 + 1, right);
+    }
+
+public:
+    // Constructor handles dynamic memory allocation
+    DescriptiveStatistics(int size) : n(size) {
+        vals = (n > 0) ? new int[n] : nullptr;
+        freqs = (n > 0) ? new int[n] : nullptr;
+    }
+
+    // Destructor ensures memory cleanup
+    ~DescriptiveStatistics() {
+        delete[] vals;
+        delete[] freqs;
+    }
+
+    bool isValid() const {
+        return n > 0 && vals != nullptr && freqs != nullptr;
+    }
+
+    void inputAndSort() {
+        (n > 0) ? (
+            readDataRecursive(0, n - 1),
+            quickSortRecursive(0, n - 1),
+            void()
+        ) : void();
+    }
+
+    double getMean() const {
+        return sumXF(0, n - 1) / sumFreq(0, n - 1);
+    }
+
+    double getMedian() const {
+        return calculateMedianGivenTotal(sumFreq(0, n - 1));
+    }
+
+    int getMode() const {
+        return getModeInfo(0, n - 1).mode_val;
+    }
+
+    int getRange() const {
+        return vals[n - 1] - vals[0];
+    }
+
+    double getVariance() const {
+        return sumSquaredDiff(getMean(), 0, n - 1) / sumFreq(0, n - 1);
+    }
+
+    double getStdDev() const {
+        return std::sqrt(getVariance());
+    }
+
+    double getMeanDev() const {
+        return sumAbsDiff(getMean(), 0, n - 1) / sumFreq(0, n - 1);
+    }
+
+    void displayStatistics() const {
+        (n > 0) ? (
+            cout << "\n--- Statistics ---\n",
+            cout << "Mean   : " << getMean() << "\n",
+            cout << "Median : " << getMedian() << "\n",
+            cout << "Mode   : " << getMode() << "\n",
+            
+            cout << "\n--- Measures of Dispersion ---\n",
+            cout << "Range          : " << getRange() << "\n",
+            cout << "Variance       : " << getVariance() << "\n",
+            cout << "Std Deviation  : " << getStdDev() << "\n",
+            cout << "Mean Deviation : " << getMeanDev() << "\n",
+            
+            void()
+        ) : (cout << "No data available.\n", void());
+    }
+};
 
 // =====================================================
 // Main Execution
 // =====================================================
 int main() {
     int n;
-    cout<<"Welcome To PICT schools \nYou are experiencing a Calculator Programm which is Guided by a Math faculty and made by Technics given by CE faculty"<<endl;
-    cout<<"Presenting the basic descriptive statistics calculator "<<endl;
+    cout << "Welcome To PICT schools \nYou are experiencing a Calculator Programm which is Guided by a Math faculty and made by Technics given by CE faculty" << endl;
+    cout << "Presenting the basic descriptive statistics calculator " << endl;
     cout << "Enter number of distinct data points: ";
     cin >> n;
     
-    int* vals = new int[n];
-    int* freqs = new int[n];
+    // Instantiating the encapsulated Object-Oriented component
+    DescriptiveStatistics stats(n);
     
-    // Absolutely zero if/else or loops in main, using ternary operator sequencing!
-    (n > 0) ? (
-        readData(vals, freqs, 0, n - 1),
-        quickSort(vals, freqs, 0, n - 1),
-        
-        cout << "\n--- Statistics ---\n",
-        cout << "Mean   : " << getMean(vals, freqs, n) << "\n",
-        cout << "Median : " << getMedian(vals, freqs, n) << "\n",
-        cout << "Mode   : " << getMode(vals, freqs, n) << "\n",
-        
+    // Using ternary sequencing in main, strictly adhering to the "absolutely zero if/else or loops" main methodology
+    stats.isValid() ? (
+        stats.inputAndSort(),
+        stats.displayStatistics(),
         void()
     ) : (cout << "Invalid number of data points. Minimum 1 required.\n", void());
-    
-    delete[] vals;
-    delete[] freqs;
     
     return 0;
 }
